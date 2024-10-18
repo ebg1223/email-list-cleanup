@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import { viteSingleFile } from "vite-plugin-singlefile";
 import solidPlugin from "vite-plugin-solid";
 // import devtools from 'solid-devtools/vite';
 
@@ -11,7 +10,6 @@ export default defineConfig({
     */
     // devtools(),
     solidPlugin(),
-    viteSingleFile(),
   ],
   server: {
     port: 3000,
