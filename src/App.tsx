@@ -105,6 +105,13 @@ function CSVParser() {
   return (
     <div class="p-6 max-w-lg mx-auto">
       <h1 class="text-2xl font-bold mb-4">CSV File Parser</h1>
+      <h2 class="text-lg mb-4">
+        Upload a CSV file with 3 columns: first_name, last_name, email
+      </h2>
+      <h2 class="text-lg mb-4 text-green-500">
+        Note: All data is processed locally on your computer. This application
+        is not run from a server and no data is sent to the internet.
+      </h2>
       <input
         type="file"
         accept=".csv"
