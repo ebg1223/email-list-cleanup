@@ -5,7 +5,7 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build --mode singlefile && cp singlefile/index.html dist/assets/emailcleanup.html",
     "serve": "vite preview"
   },
   "license": "MIT",
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "papaparse": "^5.4.1",
-    "solid-js": "^1.8.11"
+    "solid-js": "^1.8.11",
+    "vite-plugin-singlefile": "^2.0.2"
   }
 }

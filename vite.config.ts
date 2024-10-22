@@ -1,8 +1,8 @@
 import { defineConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
 // import devtools from 'solid-devtools/vite';
-
-export default defineConfig({
+import { viteSingleFile } from "vite-plugin-singlefile";
+export default defineConfig(({ mode }) => ({
   plugins: [
     /* 
     Uncomment the following line to enable solid-devtools.
@@ -10,11 +10,13 @@ export default defineConfig({
     */
     // devtools(),
     solidPlugin(),
+    mode === "singlefile" ? viteSingleFile() : null,
   ],
   server: {
     port: 3000,
   },
   build: {
     target: "esnext",
+    outDir: mode === "singlefile" ? "singlefile" : "dist",
   },
-});
+}));

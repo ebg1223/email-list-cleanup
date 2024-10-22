@@ -113,11 +113,18 @@ function CSVParser() {
         is not run from a server and no data is sent to the internet.
       </h2>
       <p class="text-sm mb-4">
+        You can also run this application locally by downloading it:
+        <a download="emailcleanup.html" href="/assets/emailcleanup.html">
+          Download
+        </a>
+      </p>
+      <p class="text-sm mb-4">
         Audit source:{" "}
         <a href="https://github.com/ebg1223/email-list-cleanup">
           https://github.com/ebg1223/email-list-cleanup
         </a>
       </p>
+
       <input
         type="file"
         accept=".csv"
