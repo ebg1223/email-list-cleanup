@@ -112,6 +112,12 @@ function CSVParser() {
         Note: All data is processed locally on your computer. This application
         is not run from a server and no data is sent to the internet.
       </h2>
+      <p class="text-sm mb-4">
+        Audit source:{" "}
+        <a href="https://github.com/ebg1223/email-list-cleanup">
+          https://github.com/ebg1223/email-list-cleanup
+        </a>
+      </p>
       <input
         type="file"
         accept=".csv"
