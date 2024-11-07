@@ -1,8 +1,10 @@
-import { createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import Papa from "papaparse";
 
 function CSVParser() {
   const [csvData, setCsvData] = createSignal(null);
+  const [headers, setHeaders] = createSignal([]);
+  const [selectedEmailColumn, setSelectedEmailColumn] = createSignal(null);
   const [error, setError] = createSignal(null);
   const [invalidEmails, setInvalidEmails] = createSignal([]);
   const [duplicateRows, setDuplicateRows] = createSignal([]);
@@ -14,6 +16,7 @@ function CSVParser() {
     if (!file) return;
 
     setOriginalFileName(file.name.replace(/\.csv$/, ""));
+    setSelectedEmailColumn(null); // Reset selection when new file is uploaded
 
     Papa.parse(file, {
       header: true,
@@ -21,66 +24,70 @@ function CSVParser() {
       complete: (results) => {
         if (results.errors.length > 0) {
           setError(results.errors);
-          setCsvData(null);
-          setInvalidEmails([]);
-          setDuplicateRows([]);
-          setFilteredData([]);
+          resetState();
         } else {
           const data = results.data;
-          if (data.length > 0 && Object.keys(data[0]).length === 3) {
-            const trimmedData = data.map((row) => {
-              return {
-                ...row,
-                [Object.keys(row)[2]]: row[Object.keys(row)[2]]
-                  .trim()
-                  .toLowerCase(),
-              };
-            });
-
-            const emails = trimmedData.map((row) => row[Object.keys(row)[2]]);
-            const invalidEmailsList = emails.filter(
-              (email) => !validateEmail(email)
-            );
-            setInvalidEmails(invalidEmailsList);
-
-            const validRows = trimmedData.filter((row) =>
-              validateEmail(row[Object.keys(row)[2]])
-            );
-            const uniqueRows = [];
-            const emailSet = new Set();
-            const duplicates = [];
-
-            validRows.forEach((row) => {
-              const email = row[Object.keys(row)[2]];
-              if (!emailSet.has(email)) {
-                emailSet.add(email);
-                uniqueRows.push(row);
-              } else {
-                duplicates.push(row);
-              }
-            });
-
-            setDuplicateRows(duplicates);
-            setFilteredData(uniqueRows);
-            setCsvData(trimmedData);
+          if (data.length > 0) {
+            setHeaders(Object.keys(data[0]));
+            setCsvData(data);
             setError(null);
           } else {
-            setError("CSV must contain exactly 3 columns.");
-            setCsvData(null);
-            setInvalidEmails([]);
-            setDuplicateRows([]);
-            setFilteredData([]);
+            setError("CSV appears to be empty.");
+            resetState();
           }
         }
       },
       error: (err) => {
         setError(err.message);
-        setCsvData(null);
-        setInvalidEmails([]);
-        setDuplicateRows([]);
-        setFilteredData([]);
+        resetState();
       },
     });
+  };
+
+  const resetState = () => {
+    setCsvData(null);
+    setHeaders([]);
+    setSelectedEmailColumn(null);
+    setInvalidEmails([]);
+    setDuplicateRows([]);
+    setFilteredData([]);
+  };
+
+  const processData = () => {
+    if (!csvData() || !selectedEmailColumn()) return;
+
+    const data = csvData();
+    const emailColumn = selectedEmailColumn();
+
+    // Process the data with the selected email column
+    const trimmedData = data.map((row) => ({
+      ...row,
+      [emailColumn]: row[emailColumn].trim().toLowerCase(),
+    }));
+
+    const emails = trimmedData.map((row) => row[emailColumn]);
+    const invalidEmailsList = emails.filter((email) => !validateEmail(email));
+    setInvalidEmails(invalidEmailsList);
+
+    const validRows = trimmedData.filter((row) =>
+      validateEmail(row[emailColumn])
+    );
+    const uniqueRows = [];
+    const emailSet = new Set();
+    const duplicates = [];
+
+    validRows.forEach((row) => {
+      const email = row[emailColumn];
+      if (!emailSet.has(email)) {
+        emailSet.add(email);
+        uniqueRows.push(row);
+      } else {
+        duplicates.push(row);
+      }
+    });
+
+    setDuplicateRows(duplicates);
+    setFilteredData(uniqueRows);
   };
 
   const validateEmail = (email) => {
@@ -135,6 +142,26 @@ function CSVParser() {
         onChange={handleFileChange}
         class="mb-4 p-2 border border-gray-300 rounded"
       />
+
+      <Show when={headers().length > 0 && !selectedEmailColumn()}>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Select Email Column:
+          </label>
+          <select
+            class="w-full p-2 border border-gray-300 rounded"
+            onChange={(e) => {
+              setSelectedEmailColumn(e.target.value);
+              processData();
+            }}
+          >
+            <option value="">Select a column...</option>
+            {headers().map((header) => (
+              <option value={header}>{header}</option>
+            ))}
+          </select>
+        </div>
+      </Show>
 
       {error() && (
         <div class="mb-4 p-4 bg-red-100 border border-red-400 rounded">
