@@ -1,6 +1,12 @@
 import { createSignal, Show } from "solid-js";
 import Papa from "papaparse";
 
+// Add a new type and signal at the top of the component
+interface CorrectedEmail {
+  originalRow: any;
+  correctedEmail: string;
+}
+
 function CSVParser() {
   const [csvData, setCsvData] = createSignal(null);
   const [headers, setHeaders] = createSignal([]);
@@ -10,6 +16,9 @@ function CSVParser() {
   const [duplicateRows, setDuplicateRows] = createSignal([]);
   const [filteredData, setFilteredData] = createSignal([]);
   const [originalFileName, setOriginalFileName] = createSignal("filtered_data");
+  const [correctedEmails, setCorrectedEmails] = createSignal<
+    Record<string, string>
+  >({});
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -98,17 +107,43 @@ function CSVParser() {
   };
 
   const handleDownload = () => {
-    if (filteredData().length === 0) return;
+    if (
+      filteredData().length === 0 &&
+      Object.keys(correctedEmails()).length === 0
+    )
+      return;
 
-    // Convert the filtered data back to CSV format
-    const csv = Papa.unparse(filteredData());
+    // Get the valid rows
+    let downloadData = [...filteredData()];
 
-    // Create a downloadable link
+    // Add corrected rows
+    invalidEmails().forEach((row) => {
+      const correctedEmail = correctedEmails()[JSON.stringify(row)];
+      if (correctedEmail) {
+        const correctedRow = {
+          ...row,
+          [selectedEmailColumn()]: correctedEmail,
+        };
+        downloadData.push(correctedRow);
+      }
+    });
+
+    const csv = Papa.unparse(downloadData);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `${originalFileName()}_fixed.csv`;
     link.click();
+  };
+
+  // Add a handler for email corrections
+  const handleEmailCorrection = (originalRow: any, newEmail: string) => {
+    if (validateEmail(newEmail)) {
+      setCorrectedEmails((prev) => ({
+        ...prev,
+        [JSON.stringify(originalRow)]: newEmail,
+      }));
+    }
   };
 
   return (
@@ -179,28 +214,75 @@ function CSVParser() {
           <h3 class="font-semibold text-yellow-700 mb-2">
             Invalid Email Addresses:
           </h3>
-          <table class="min-w-full border-collapse border border-yellow-400">
-            <thead>
-              <tr class="bg-yellow-50">
-                {headers().map((header) => (
-                  <th class="border border-yellow-400 p-2 text-left font-medium text-yellow-700">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {invalidEmails().map((row) => (
-                <tr class="bg-yellow-50">
-                  {headers().map((header) => (
-                    <td class="border border-yellow-400 p-2 text-yellow-700">
-                      {row[header]}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div class="space-y-4">
+            {invalidEmails().map((row) => {
+              const rowKey = JSON.stringify(row);
+              const correctedEmail = correctedEmails()[rowKey];
+              const isFixed = correctedEmail && validateEmail(correctedEmail);
+
+              return (
+                <div
+                  class={`p-3 rounded ${
+                    isFixed ? "bg-green-50" : "bg-yellow-50"
+                  } border ${
+                    isFixed ? "border-green-400" : "border-yellow-400"
+                  }`}
+                >
+                  <table class="min-w-full border-collapse mb-2">
+                    <thead>
+                      <tr>
+                        {headers().map((header) => (
+                          <th
+                            class={`border p-2 text-left font-medium ${
+                              isFixed
+                                ? "border-green-400 text-green-700"
+                                : "border-yellow-400 text-yellow-700"
+                            }`}
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {headers().map((header) => (
+                          <td
+                            class={`border p-2 ${
+                              isFixed
+                                ? "border-green-400 text-green-700"
+                                : "border-yellow-400 text-yellow-700"
+                            }`}
+                          >
+                            {row[header]}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div class="mt-2 flex gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="Enter corrected email"
+                      value={correctedEmail || ""}
+                      onInput={(e) =>
+                        handleEmailCorrection(row, e.currentTarget.value)
+                      }
+                      class={`p-1 border rounded flex-grow ${
+                        isFixed
+                          ? "border-green-400 bg-green-50"
+                          : "border-yellow-400 bg-yellow-50"
+                      }`}
+                    />
+                    {isFixed && (
+                      <span class="text-green-600 text-sm">✓ Corrected</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
