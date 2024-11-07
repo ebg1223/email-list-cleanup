@@ -65,9 +65,11 @@ function CSVParser() {
       [emailColumn]: row[emailColumn].trim().toLowerCase(),
     }));
 
-    const emails = trimmedData.map((row) => row[emailColumn]);
-    const invalidEmailsList = emails.filter((email) => !validateEmail(email));
-    setInvalidEmails(invalidEmailsList);
+    // Modified to store the entire row for invalid emails
+    const invalidRowsList = trimmedData.filter(
+      (row) => !validateEmail(row[emailColumn])
+    );
+    setInvalidEmails(invalidRowsList);
 
     const validRows = trimmedData.filter((row) =>
       validateEmail(row[emailColumn])
@@ -177,11 +179,28 @@ function CSVParser() {
           <h3 class="font-semibold text-yellow-700 mb-2">
             Invalid Email Addresses:
           </h3>
-          <ul class="list-disc pl-5 text-sm text-yellow-700">
-            {invalidEmails().map((email, index) => (
-              <li key={index}>{email}</li>
-            ))}
-          </ul>
+          <table class="min-w-full border-collapse border border-yellow-400">
+            <thead>
+              <tr class="bg-yellow-50">
+                {headers().map((header) => (
+                  <th class="border border-yellow-400 p-2 text-left font-medium text-yellow-700">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {invalidEmails().map((row) => (
+                <tr class="bg-yellow-50">
+                  {headers().map((header) => (
+                    <td class="border border-yellow-400 p-2 text-yellow-700">
+                      {row[header]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
